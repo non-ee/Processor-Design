@@ -1,15 +1,15 @@
 `include "macro.vh"
 
 module alu (
-    input [2:0] Ctrl,           // ALUの制御信号
-    input [31:0] A, B,          // オペランド A, B
-    output reg [31:0] Out,      // 演算の結果
-    output zero, slt, sltu
+    input [2:0] Ctrl,           // Signal to control ALU operation
+    input [31:0] A, B,          // Operands : A, B
+    output reg [31:0] Out,      // Output of the operation
+    output zero, slt, sltu      // Comparison between A and B
 );
 
     assign zero = Out == 0;
-    assign slt = $signed(A) < $signed(B);
-    assign sltu = A < B;
+    assign slt = $signed(Out) < 0;
+    assign sltu = Out < 0;
 
     // Operation Control
     always @(*) begin

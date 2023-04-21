@@ -54,9 +54,9 @@ module decoder (
         case (inst[6:0])
             /* R-type format */
             /* I-type format */
-            7'b1100111, 
-            7'b0000011 : Immediate = $signed({inst[31:20]}); 
-            7'b0010011 : begin
+            `jalr, 
+            `load : Immediate = $signed({inst[31:20]}); 
+            `I_op : begin
                 case ({inst[14:12]})
                     3'b001,
                     3'b101  : Immediate = inst[24:20];
@@ -64,14 +64,14 @@ module decoder (
                 endcase
             end
             /* S-type format */
-            7'b0100011 : Immediate = $signed({inst[31:25], inst[11:7]});
+            `store : Immediate = $signed({inst[31:25], inst[11:7]});
             /* B-type format */
-            7'b1100011 : Immediate = $signed({inst[31], inst[7], inst[30:25], inst[11:8], 1'b0});
+            `branch : Immediate = $signed({inst[31], inst[7], inst[30:25], inst[11:8], 1'b0});
             /* U-type format */
-            7'b0110111, 
-            7'b0010111 : Immediate = {inst[31:12], 12'b0};
+            `lui, 
+            `auipc : Immediate = {inst[31:12], 12'b0};
             /* J-type format */
-            7'b1101111 : Immediate = $signed({inst[31], inst[19:12], inst[20], inst[30:21], 1'b0});
+            `jal : Immediate = $signed({inst[31], inst[19:12], inst[20], inst[30:21], 1'b0});
         endcase
     endfunction
 
@@ -96,9 +96,9 @@ module decoder (
         end
         
         // I-type
-        else if (inst[6:0] == 7'b1100111 || inst[6:0] == 7'b0000011)
+        else if (inst[6:0] == `jalr || inst[6:0] == `load)
             alu_control = 0;
-        else if (inst[6:0] == 7'b0010011) begin
+        else if (inst[6:0] == `I_op) begin
             case (inst[14:12])
                 3'b000 : alu_control = `ADD;         // addi
                 3'b010,         
@@ -111,14 +111,15 @@ module decoder (
                 3'b101 : alu_control =  (inst[31:25] == 0 ) ? `SRL :         // srli      
                                         (inst[31:25] == 7'h20) ? `SRA :      // srai
                                                                 3'bxxx;    
-
                 default: alu_control = 3'bxxx;
             endcase
         end
 
-        // S-type, U-type, J-type
-        else if (inst[6:0] == 7'b0100011 || inst[6:0] == 7'b0010111 || inst[6:0] == 7'b1101111)
+        // S-type, U-type
+        else if (inst[6:0] == `store || inst[6:0] == `auipc)
             alu_control = `ADD;
+        else if (inst[6:0] == `branch)
+            alu_control = `SUB;
 
     endfunction
 endmodule
