@@ -9,7 +9,7 @@ module decoder (
     output MemRead,             // Signal to enable reading from the Data Memory
     output MemWrite,            // Signal to enable writing on the Data Memory
     output AluSrc,              // Signal to indicate the second operand of ALU (rs2 or Imm) 
-    output [1:0] MemToReg,      // Signal to indicate which data to be written on the Register
+    output [1:0] MemToReg,      // Signal to indicate which data to be written back to Register
     output [2:0] AluCtrl,       // Control Signal for ALU
     output [31:0] Imm           // Immediate
 );
@@ -34,10 +34,10 @@ module decoder (
 
     assign MemWrite =   opCode == `store;         // enable write over the memory for store instruction   
 
-    assign MemToReg =   opCode == `load ? 1 :    // 1 : Memory (load inst)
-                        opCode == `jal || opCode == `jalr ? 2 :    // 2 : PC + 4 (jal, jalr)
+    assign MemToReg =   opCode == `load ? 1 :                       // 1 : Memory (load inst)
+                        opCode == `jal || opCode == `jalr ? 2 :     // 2 : PC + 4 (jal, jalr)
                         opCode == `lui || opCode == `auipc ? 3 :    // 3 : Imm (lui) or PC + Imm (auipc) 
-                                                           0 ;    // 0 : Alu (otherwise)
+                                                           0 ;      // 0 : Alu (otherwise)
                                                         
     
     assign AluSrc = opCode == `load  ||
@@ -100,14 +100,14 @@ module decoder (
             alu_control = 0;
         else if (inst[6:0] == `I_op) begin
             case (inst[14:12])
-                3'b000 : alu_control = `ADD;         // addi
+                3'b000 : alu_control = `ADD;            // addi
                 3'b010,         
                 3'b011 : alu_control = `SUB;           // slti, sltiu;
                 3'b100 : alu_control = `XOR;           // xori
                 3'b110 : alu_control = `OR;            // ori
                 3'b111 : alu_control = `AND;           // andi
 
-                3'b001 : alu_control = `SLL;           // slli
+                3'b001 : alu_control = `SLL;                                 // slli
                 3'b101 : alu_control =  (inst[31:25] == 0 ) ? `SRL :         // srli      
                                         (inst[31:25] == 7'h20) ? `SRA :      // srai
                                                                 3'bxxx;    
