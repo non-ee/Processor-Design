@@ -21,21 +21,18 @@ module top(
     inout [31:0] DDT
 );
 
-    /* Program Counter */
+/***********************************************/
+/*                Program Counter              */
+/***********************************************/
+
     reg PcSrc;
     reg [31:0] PC_IN, PC;
     always @(posedge clk or negedge rst) begin
         if (~rst) 
             PC <= 0;
-        else if (PcSrc)
-            PC <= PC_IN;
-        else
-            PC <= PC + 4;
+        PC <= PcSrc ? PC_IN : PC + 4;
         PcSrc <= 0;
     end
-
-    /* Instruction Memory */
-
 
     /* Instruction Decoder */
     wire [31:0] inst;
@@ -62,7 +59,10 @@ module top(
         .Imm(Imm)
     );
 
-    /* Register File */
+/***********************************************/
+/*                 Register File               */
+/***********************************************/
+
     wire [31:0] rs1_data, rs2_data;         // Data read from rs1, rs2
     wire [31:0] regWrData;                  // Data to be written into register
 
@@ -73,7 +73,9 @@ module top(
         .data1_out(rs1_data), .data2_out(rs2_data)
     );
     
-    /* ALU */
+/***********************************************/
+/*                      ALU                    */
+/***********************************************/
     wire [31:0] Alu_A, Alu_B;               // ALU operand
     wire [31:0] Alu_Out;                    // ALU output
     wire ZERO, SLT, SLTU;                   // Comparison of the two operands
