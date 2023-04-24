@@ -7,9 +7,9 @@ module alu (
     output zero, slt, sltu      // Comparison between A and B
 );
 
-    assign zero = Out == 0;
-    assign slt = $signed(Out) < 0;
-    assign sltu = Out < 0;
+    assign zero = Ctrl == `SUB ? (Out == 0) : 1'bx ;
+    assign slt  = Ctrl == `SUB ? ($signed(Out) < 0) : 1'bx ;
+    assign sltu = Ctrl == `SUB ? (Out < 0) : 1'bx ;
 
     // Operation Control
     always @(*) begin
