@@ -95,12 +95,12 @@ module top_test;
       for (i = 0; i < `IN_TOTAL; i =i +1)
          begin
 
-         Iaddr = u_top_1.IAD;            
-         fetch_task1;
+            Iaddr = u_top_1.IAD;            
+            fetch_task1;
 
-         Daddr = u_top_1.DAD;
-         load_task1;
-         store_task1;
+            Daddr = u_top_1.DAD;
+            load_task1;
+            store_task1;
          
             // #(STB);
             #CYCLE;
@@ -114,7 +114,7 @@ module top_test;
 
    //*** description for wave form ***//
    initial begin
-      //$monitor($stime," PC=%h INST=%h", IAD, IDT);
+      // $monitor($stime," PC=%h INST=%h", IAD, IDT);
       //ここから2行はIcarus Verilog用(手元で動かすときに使ってください)
       $dumpfile("top_test.vcd");
       $dumpvars(0, u_top_1);
@@ -187,7 +187,6 @@ module top_test;
       begin
          if(u_top_1.MREQ && u_top_1.WRITE)
             begin
-
                if (Daddr == EXIT_ADDR)
                   begin
                      $display("\nExited by program.");

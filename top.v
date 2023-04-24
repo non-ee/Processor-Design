@@ -30,8 +30,10 @@ module top(
     always @(posedge clk or negedge rst) begin
         if (~rst) 
             PC <= 0;
-        PC <= PcSrc ? PC_IN : PC + 4;
-        PcSrc <= 0;
+        else begin
+            PC <= PcSrc ? PC_IN : PC + 4;
+            PcSrc <= 0;
+        end
     end
 
     /* Instruction Decoder */
@@ -90,7 +92,9 @@ module top(
         .zero(ZERO), .slt(SLT), .sltu(SLTU)
     );
 
-    /* Data Memory */
+/***********************************************/
+/*                  Data Memory                */
+/***********************************************/
     wire [31:0] memAddr;                    // Memory address to be read from Data Memory
     wire [31:0] memRdData, memWrData;       // memRdData : value read from memAddr
                                             // memWrData : value to be written into Data Memory
@@ -111,17 +115,19 @@ module top(
     //                     func == 3'b101 ? memRdData[15:0] :                   // load half (unsigned)
     //                                     32'hxxxxxxxx;
 
-    assign U_type_wrData =  opcode == `lui   ? Imm :                     // lui
+    assign  U_type_wrData =  opcode == `lui   ? Imm :                     // lui
                             opcode == `auipc ? PC + Imm :                // auipc
                                                 32'hxxxxxxxx;
 
-    assign regWrData =  MemToReg == 1 ? memRdData :
+    assign  regWrData =  MemToReg == 1 ? memRdData :
                         MemToReg == 2 ? PC + 4 :
                         MemToReg == 3 ? U_type_wrData :
                                         Alu_Out;
 
 
-    /* Next PC */
+/***********************************************/
+/*                    Next PC                  */
+/***********************************************/
     always @(posedge (opcode == `jal)) begin
         PcSrc <= 1;
         PC_IN <= Imm;
