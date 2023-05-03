@@ -29,4 +29,8 @@
 `define bltu    3'b110
 `define bgeu    3'b111
 
+// R-op func
+`define slt     3'b010
+`define sltu    3'b011
+
 `endif

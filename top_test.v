@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`define IN_TOTAL 1000000000
+`define IN_TOTAL 100000
 `include "top.v"
 
 module top_test;
@@ -10,7 +10,7 @@ module top_test;
    parameter STB         =  8;
    parameter SKEW        =  2;
    parameter BIT_WIDTH   = 32;
-   parameter BYTE_SIZE   =  8;
+   parameter BYTE_SIZE    =  8;
    parameter IMEM_LATENCY = 1;  // instruction memory latency
    parameter DMEM_LATENCY = 1;  // data memory latency
    parameter IMEM_START = 32'h0000_0000;
@@ -60,61 +60,70 @@ module top_test;
                .DDT(DDT)
                );
    
-   //*** clock generation ***//
-   always begin
-      clk = 1'b1;
-      #(HALF_CYCLE) clk = 1'b0;
-      #(HALF_CYCLE);
-   end
+     //*** clock generation ***//
+      always begin
+         clk = 1'b1;
+         #(HALF_CYCLE) clk = 1'b0;
+         #(HALF_CYCLE);
+      end
 
-   //*** initialize ***//
-   initial begin
-      //*** read input data ***//
-      $readmemh("./Dmem.dat", DATA_Dmem);
-      $readmemh("./Imem.dat", DATA_Imem);
+     //*** initialize ***//
+      initial begin
+         //*** read input data ***//
+         $readmemh("./Dmem.dat", DATA_Dmem);
+         $readmemh("./Imem.dat", DATA_Imem);
 
-      Max_Daddr = 0;
+         Max_Daddr = 0;
 
-      //*** reset OINT_n, ACKI_n, ACKD_n, CIL, CDL ***//
-      OINT_n = 3'b111;
-      ACKI_n = 1'b1;
-      ACKD_n = 1'b1;
-      CIL = 0;
-      CDLL = 0;
-      CDSL = 0;
+         //*** reset OINT_n, ACKI_n, ACKD_n, CIL, CDL ***//
+         OINT_n = 3'b111;
+         ACKI_n = 1'b1;
+         ACKD_n = 1'b1;
+         CIL = 0;
+         CDLL = 0;
+         CDSL = 0;
 
-      //*** reset ***//
-      rst = 1'b1;
-      #1 rst = 1'b0;
-      #CYCLE rst = 1'b1;
-   end
+         //*** reset ***//
+         rst = 1'b1;
+         #1 rst = 1'b0;
+         #CYCLE rst = 1'b1;
+      end
 
-   initial begin
-      #HALF_CYCLE;
-      //*** data input loop ***//
-      for (i = 0; i < `IN_TOTAL; i =i +1)
-         begin
-
-            Iaddr = u_top_1.IAD;            
-            fetch_task1;
-
-            Daddr = u_top_1.DAD;
-            load_task1;
-            store_task1;
-         
-            // #(STB);
-            #CYCLE;
-            release DDT;
+      initial begin
+         #HALF_CYCLE;
+         //*** data input loop ***//
+         for (i = 0; i < `IN_TOTAL; i =i +1)
+            begin
+               Iaddr = u_top_1.IAD;            
+               fetch_task1;
+               
+               #(HALF_CYCLE);
+               Daddr = u_top_1.DAD;
+               load_task1;
+               store_task1;
+               
+               // #(STB);
+               #(HALF_CYCLE);
+               release DDT;
           end // for (i = 0; i < `IN_TOTAL; i =i +1)
 
       $display("\nReach IN_TOTAL.");
-      dump_task1;
+
+      //   dump_task1;
+
       $finish;
-   end // initial begin
+
+     end // initial begin
 
    //*** description for wave form ***//
+   wire [1023:0] tmp_mem;
+   parameter idx = 32'h0802ffcc;
+   assign tmp_mem = u_top_1.u_regfile.u_DW_ram_2r_w_s_dff.mem;
    initial begin
-      // $monitor($stime," PC=%h INST=%h", IAD, IDT);
+      // $monitor($stime," PC=%h INST=%h", IAD, IDT); 
+      // $monitor("IAD=%h , data_in=%h wr_addr=%h sp=%h ra=%h",IAD,u_top_1.u_regfile.data_in,u_top_1.rd,tmp_mem[95:64],tmp_mem[63:32]);
+      // $monitor("IAD=%h , a5=%h a4=%h Daddr=%h DDT=%h", IAD, tmp_mem[32*15+31:32*15], tmp_mem[32*14+31:32*14], Daddr,DDT);
+      // $monitor("IAD=%h, M[STDOUT_ADDR]=%h",IAD,DATA_Dmem[STDOUT_ADDR]);
       //ここから2行はIcarus Verilog用(手元で動かすときに使ってください)
       $dumpfile("top_test.vcd");
       $dumpvars(0, u_top_1);
@@ -135,11 +144,11 @@ module top_test;
                ACKI_n = 1'b0;
                CIL = 0;
             end
-         else
+            else
             begin
                IDT = 32'hxxxxxxxx;
                ACKI_n = 1'b1;
-            end // else: !if(CIL == IMEM_LATENCY)
+           end // else: !if(CIL == IMEM_LATENCY)
       end
    endtask // fetch_task1
    
@@ -147,6 +156,7 @@ module top_test;
       begin
          if(u_top_1.MREQ && !u_top_1.WRITE)
             begin
+
                if (Max_Daddr < Daddr)
                   begin
                      Max_Daddr = Daddr;
@@ -167,19 +177,19 @@ module top_test;
                                           DATA_Dmem[{Daddr[BIT_WIDTH-1:2],2'b10} - Daddr[1:0] + 1]};
                         end
                      else
-                        begin
-                           force DDT[BIT_WIDTH-1:0] = {{24{1'b0}}, DATA_Dmem[{Daddr[BIT_WIDTH-1:2],2'b11} - Daddr[1:0]]};
-                        end // else: !if(SIZE == 2'b01)
+                     begin
+                        force DDT[BIT_WIDTH-1:0] = {{24{1'b0}}, DATA_Dmem[{Daddr[BIT_WIDTH-1:2],2'b11} - Daddr[1:0]]};
+                     end // else: !if(SIZE == 2'b01)
 
-                     ACKD_n = 1'b0;
-                     CDLL = 0;
+                   ACKD_n = 1'b0;
+                   CDLL = 0;
 
-                  end // if (CDLL == DMEM_LATENCY)
-               else
-                  begin
-                     ACKD_n = 1'b1;
-                  end // else: !if(CDLL == DMEM_LATENCY)
-            end // if (u_top_1.MREQ && !u_top_1.WRITE)
+                end // if (CDLL == DMEM_LATENCY)
+              else
+                begin
+                   ACKD_n = 1'b1;
+                end // else: !if(CDLL == DMEM_LATENCY)
+           end // if (u_top_1.MREQ && !u_top_1.WRITE)
       end
    endtask // load_task1
    
@@ -187,10 +197,12 @@ module top_test;
       begin
          if(u_top_1.MREQ && u_top_1.WRITE)
             begin
+
                if (Daddr == EXIT_ADDR)
                   begin
                      $display("\nExited by program.");
-                     dump_task1;
+                     // $display("M[STDOUT_ADDR]=%h",DATA_Dmem[STDOUT_ADDR]);
+                     // dump_task1;
                      $finish;
                   end
                else if (Daddr != STDOUT_ADDR)
@@ -220,20 +232,17 @@ module top_test;
                         end
                      else
                         begin
-                           if (Daddr == STDOUT_ADDR)
-                           begin
+                           if (Daddr == STDOUT_ADDR) begin
                               $write("%c", DDT[BIT_WIDTH-25:BIT_WIDTH-32]);
                            end
-                           else
-                           begin
+                           else begin
                               DATA_Dmem[{Daddr[BIT_WIDTH-1:2],2'b11} - Daddr[1:0]] = DDT[BIT_WIDTH-25:BIT_WIDTH-32];
                            end
-                        end // else: !if(SIZE == 2'b01)
-                     
-                     ACKD_n = 1'b0;
-                     CDSL = 0;
+                     end // else: !if(SIZE == 2'b01)
+                  ACKD_n = 1'b0;
+                  CDSL = 0;
 
-                  end // if (CDSL == DMEM_LATENCY)
+               end // if (CDSL == DMEM_LATENCY)
                else
                   begin
                      ACKD_n = 1'b1;
@@ -244,27 +253,26 @@ module top_test;
 
    task dump_task1;
       begin
-         Imem_data = $fopen("./Imem_out.dat");
-         for (i = IMEM_START; i <= IMEM_START + IMEM_SIZE; i = i+4)  // output data memory to Dmem_data (Dmem_out.dat)
-            begin
-               $fwrite(Imem_data, "%h :%h %h %h %h\n", i, DATA_Imem[i], DATA_Imem[i+1], DATA_Imem[i+2], DATA_Imem[i+3]);
-            end
-         $fclose(Imem_data);
-         Dmem_data = $fopen("./Dmem_out.dat");
-         for (i = DMEM_START; i <= DMEM_START + DMEM_SIZE; i = i+4)  // output data memory to Dmem_data (Dmem_out.dat)
-            begin
-               $fwrite(Dmem_data, "%h :%h %h %h %h\n", i, DATA_Dmem[i], DATA_Dmem[i+1], DATA_Dmem[i+2], DATA_Dmem[i+3]);
-            end
-         $fclose(Dmem_data);
+        Imem_data = $fopen("./Imem_out.dat");
+        for (i = IMEM_START; i <= IMEM_START + IMEM_SIZE; i = i+4)  // output data memory to Dmem_data (Dmem_out.dat)
+          begin
+             $fwrite(Imem_data, "%h :%h %h %h %h\n", i, DATA_Imem[i], DATA_Imem[i+1], DATA_Imem[i+2], DATA_Imem[i+3]);
+          end
+        $fclose(Imem_data);
+        Dmem_data = $fopen("./Dmem_out.dat");
+        for (i = DMEM_START; i <= DMEM_START + DMEM_SIZE; i = i+4)  // output data memory to Dmem_data (Dmem_out.dat)
+          begin
+             $fwrite(Dmem_data, "%h :%h %h %h %h\n", i, DATA_Dmem[i], DATA_Dmem[i+1], DATA_Dmem[i+2], DATA_Dmem[i+3]);
+          end
+        $fclose(Dmem_data);
 
-         Reg_data = $fopen("./Reg_out.dat");
-         for (i =0; i < 32; i = i+1)  // output register to Reg_data (Reg_out.dat)
-            begin
-               // Reg_temp = u_top_1.id_stage.regfile.u_DW_ram_2r_w_s_dff.mem >> (BIT_WIDTH * i);
-               Reg_temp = u_top_1.u_regfile.u_DW_ram_2r_w_s_dff.mem >> (BIT_WIDTH * i);
-               $fwrite(Reg_data, "%d:%h\n", i, Reg_temp);
-            end
-         $fclose(Reg_data);
+      //   Reg_data = $fopen("./Reg_out.dat");
+      //   for (i =0; i < 32; i = i+1)  // output register to Reg_data (Reg_out.dat)
+      //     begin
+      //        Reg_temp = u_top_1.id_stage.regfile.u_DW_ram_2r_w_s_dff.mem >> (BIT_WIDTH * i);
+      //        $fwrite(Reg_data, "%d:%h\n", i, Reg_temp);
+      //     end
+      //   $fclose(Reg_data);
       end
 
    endtask // dump_task1

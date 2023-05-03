@@ -21,19 +21,14 @@ module top(
     inout [31:0] DDT
 );
 
-/***********************************************/
-/*                Program Counter              */
-/***********************************************/
-
-    reg PcSrc;
+    // PC
+    parameter PC_ORIGIN = 32'h10000;
+    wire PcSrc;
     reg [31:0] PC_IN, PC;
+
     always @(posedge clk or negedge rst) begin
-        if (~rst) 
-            PC <= 0;
-        else begin
-            PC <= PcSrc ? PC_IN : PC + 4;
-            PcSrc <= 0;
-        end
+        if (~rst) PC <= PC_ORIGIN;
+        else PC <= PcSrc ? PC_IN : PC + 4;
     end
 
     /* Instruction Decoder */
@@ -46,7 +41,6 @@ module top(
 
     wire [4:0] rs1, rs2, rd;
     wire RegWrite, MemRead, MemWrite, AluSrc;
-    wire [1:0] MemToReg;
     wire [2:0] AluCtrl;
     wire [31:0] Imm;
 
@@ -56,7 +50,6 @@ module top(
         .RegWrite(RegWrite),
         .MemRead(MemRead), .MemWrite(MemWrite),
         .AluSrc(AluSrc),
-        .MemToReg(MemToReg),
         .AluCtrl(AluCtrl),
         .Imm(Imm)
     );
@@ -69,9 +62,10 @@ module top(
     wire [31:0] regWrData;                  // Data to be written into register
 
     rf32x32 u_regfile(
-        .clk(clk), .reset(rst),
-        .wr_n(RegWrite), 
-        .rd1_addr(rs1), .rd2_addr(rs2), .data_in(regWrData),
+        .clk(~clk), .reset(rst),
+        .wr_n(~RegWrite), 
+        .rd1_addr(rs1), .rd2_addr(rs2), .wr_addr(rd),
+        .data_in(regWrData),
         .data1_out(rs1_data), .data2_out(rs2_data)
     );
     
@@ -101,65 +95,48 @@ module top(
     assign memAddr = Alu_Out;
     assign memWrData = rs2_data;
     assign memRdData = DDT;
-    // assign memWrData =  func == 3'b000 ? rs1_data[7:0] :       // store byte
-    //                     func == 3'b001 ? rs1_data[15:0] :      // store half
-    //                     func == 3'b010 ? rs2_data :            // store word
-    //                                     32'hxxxxxxxx;
 
-    /* Write data to register */
-    wire [31:0] ld_Data, U_type_wrData;
-    // assign ld_Data =    func == 3'b000 ? $signed(memRdData[7:0]) :           // load byte
-    //                     func == 3'b001 ? $signed(memRdData[15:0]) :          // load half
-    //                     func == 3'b010 ? memRdData :                         // load word
-    //                     func == 3'b100 ? memRdData[7:0] :                    // load byte (unsigned)
-    //                     func == 3'b101 ? memRdData[15:0] :                   // load half (unsigned)
-    //                                     32'hxxxxxxxx;
-
-    assign  U_type_wrData =  opcode == `lui   ? Imm :                     // lui
-                            opcode == `auipc ? PC + Imm :                // auipc
-                                                32'hxxxxxxxx;
-
-    assign  regWrData =  MemToReg == 1 ? memRdData :
-                        MemToReg == 2 ? PC + 4 :
-                        MemToReg == 3 ? U_type_wrData :
-                                        Alu_Out;
-
+    assign regWrData =  opcode == `load ? memRdData :
+                        opcode == `jal || opcode == `jalr ? PC + 4 :
+                        opcode == `lui ? Imm :
+                        opcode == `auipc ? PC + Imm :
+                        func == `slt ? SLT :
+                        func == `sltu ? SLTU : Alu_Out;
+                        
 
 /***********************************************/
 /*                    Next PC                  */
 /***********************************************/
-    always @(posedge (opcode == `jal)) begin
-        PcSrc <= 1;
-        PC_IN <= Imm;
-    end
-
-    always @(posedge (opcode == `jalr)) begin
-        PcSrc <= 1;
-        PC_IN <= rs1_data + Imm;
-    end
 
     reg branch_check;
-    always @(posedge (opcode == `branch)) begin
-        branch_check =  func == `beq ? ZERO  :
+    always @(posedge (opcode == `branch))
+        branch_check =  func == `beq ? ZERO :
                         func == `bne ? ~ZERO :
-                        func == `blt ? SLT   :
-                        func == `bge ? ~SLT  :
+                        func == `blt ? SLT :
+                        func == `bge ? ~SLT :
                         func == `bltu ? SLTU :
                         func == `bgeu ? ~SLTU :
-                                        1'bx;
+                        1'bx;
 
-        PcSrc = branch_check;
-        PC_IN = branch_check ? PC + Imm : 32'hxxxxxxxx;
+    assign PcSrc =  opcode === 7'bxxxxxxx ? 0 : opcode == `branch ? branch_check :
+                                                opcode == `jal || opcode == `jalr;
+
+    always @(posedge PcSrc) begin
+        case (opcode)
+            `jal : PC_IN <= PC + Imm;
+            `jalr : PC_IN <= rs1_data + Imm;
+            `branch : PC_IN <= PC + Imm;
+        endcase
     end
 
     // Output Assignment
     assign IAD = PC;
-    assign DAD = Alu_Out;
-    assign MREQ = MemRead;
+    assign DAD = memAddr;
+    assign MREQ = MemRead || MemWrite;
     assign WRITE = MemWrite;
-    assign SIZE =   func[1:0] == 10 ? 2'b00 :     // word
-                    func[1:0] == 01 ? 2'b01 :     // half
-                    func[1:0] == 00 ? 2'b1x :     // byte
+    assign SIZE =   func[1:0] == 2'b10 ? 2'b00 :     // word
+                    func[1:0] == 2'b01 ? 2'b01 :     // half
+                    func[1:0] == 2'b00 ? 2'b10 :     // byte
                                         2'bxx;
 
     assign IACK_n = 1;

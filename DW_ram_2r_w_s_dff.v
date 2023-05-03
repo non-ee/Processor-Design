@@ -74,6 +74,8 @@ module DW_ram_2r_w_s_dff (clk, rst_n, cs_n, wr_n, rd1_addr, rd2_addr,
    
    wire 		   a_rst_n;
    
+   wire [31:0] ra, sp;
+   assign {sp, ra} = mem[95:32];
 
    
    initial begin : parameter_check
@@ -127,24 +129,18 @@ module DW_ram_2r_w_s_dff (clk, rst_n, cs_n, wr_n, rd1_addr, rd2_addr,
    assign a_rst_n = (rst_mode == 0)? rst_n : 1'b1;
 
 
-  
    always @ (posedge clk or negedge a_rst_n) begin : registers
       integer i, j;
-      
-   
       next_mem = mem;
 
       if ((cs_n | wr_n) !== 1'b1) begin
          if ((wr_addr ^ wr_addr) !== {`DW_addr_width{1'b0}}) begin
             next_mem = {depth*data_width{1'bx}};	
-
          end else begin
-               
             if ((wr_addr < depth) && ((wr_n | cs_n) !== 1'b1)) begin
                for (i=0 ; i < data_width ; i=i+1) begin
-            j = wr_addr*data_width + i;
-            next_mem[j] = ((wr_n | cs_n) == 1'b0)? data_in[i] | 1'b0
-                     : mem[j];
+                  j = wr_addr*data_width + i;
+                  next_mem[j] = ((wr_n | cs_n) == 1'b0)? data_in[i] | 1'b0 : mem[j];
                end // for
             end // if
          end // if-else
@@ -155,10 +151,10 @@ module DW_ram_2r_w_s_dff (clk, rst_n, cs_n, wr_n, rd1_addr, rd2_addr,
          mem <= {depth*data_width{1'b0}};
       end else begin
          if ( rst_n === 1'b1) begin
-	    mem <= next_mem;
-	 end else begin
-	    mem <= {depth*data_width{1'bX}};
-	 end
+            mem <= next_mem;
+         end else begin
+            mem <= {depth*data_width{1'bX}};
+         end
       end
    end // registers
    
