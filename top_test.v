@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`define IN_TOTAL 100000
+`define IN_TOTAL 10000
 `include "top.v"
 
 module top_test;
@@ -104,6 +104,7 @@ module top_test;
                
                // #(STB);
                #(HALF_CYCLE);
+               // #CYCLE;
                release DDT;
           end // for (i = 0; i < `IN_TOTAL; i =i +1)
 
@@ -116,14 +117,8 @@ module top_test;
      end // initial begin
 
    //*** description for wave form ***//
-   wire [1023:0] tmp_mem;
-   parameter idx = 32'h0802ffcc;
-   assign tmp_mem = u_top_1.u_regfile.u_DW_ram_2r_w_s_dff.mem;
    initial begin
       // $monitor($stime," PC=%h INST=%h", IAD, IDT); 
-      // $monitor("IAD=%h , data_in=%h wr_addr=%h sp=%h ra=%h",IAD,u_top_1.u_regfile.data_in,u_top_1.rd,tmp_mem[95:64],tmp_mem[63:32]);
-      // $monitor("IAD=%h , a5=%h a4=%h Daddr=%h DDT=%h", IAD, tmp_mem[32*15+31:32*15], tmp_mem[32*14+31:32*14], Daddr,DDT);
-      // $monitor("IAD=%h, M[STDOUT_ADDR]=%h",IAD,DATA_Dmem[STDOUT_ADDR]);
       //ここから2行はIcarus Verilog用(手元で動かすときに使ってください)
       $dumpfile("top_test.vcd");
       $dumpvars(0, u_top_1);
