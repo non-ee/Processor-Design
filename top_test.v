@@ -127,7 +127,6 @@ module top_test;
       //$shm_probe("AS");
    end
 
-
    //*** tasks ***//
 
    task fetch_task1;

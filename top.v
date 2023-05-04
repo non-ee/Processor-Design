@@ -4,24 +4,27 @@
 `include "rf32x32.v"
 
 module top(
-    input clk, rst,
+    input clk, rst,                
     input ACKD_n, 
     input ACKI_n,
-    input [31:0] IDT,
+    input [31:0] IDT,               // Instruction Data
     input [2:0] OINT_n,
     input [31:0] Reg_temp,
 
-    output [31:0] IAD,
-    output [31:0] DAD,
-    output MREQ,
-    output WRITE,
-    output [1:0] SIZE,
+    output [31:0] IAD,              // Instruction Address  (Next PC)
+    output [31:0] DAD,              // Data Address         (Memory address for load inst)
+    output MREQ,                    // Enable access to Data Memory     (for load/store inst)
+    output WRITE,                   // Enable writing into Data Memory  (for store inst)
+    output [1:0] SIZE,              // Specify size of data to read/write (for load/store)
     output IACK_n,
 
-    inout [31:0] DDT
+    inout [31:0] DDT                // for load inst, as an input read from data memory
+                                    // for store inst, as an output to be read by data memory
 );
 
-    // PC
+/*******************************************************************************/
+/*                                 Program Counter                             */
+/*******************************************************************************/
     parameter PC_ORIGIN = 32'h10000;
     wire PcSrc;
     reg [31:0] PC_IN, PC;
@@ -31,7 +34,9 @@ module top(
         else PC <= PcSrc ? PC_IN : PC + 4;
     end
 
-    /* Instruction Decoder */
+/*******************************************************************************/
+/*                              Instruction Decoder                            */
+/*******************************************************************************/
     wire [31:0] inst;
     wire [7:0] opcode;
     wire [2:0] func;
@@ -54,9 +59,9 @@ module top(
         .Imm(Imm)
     );
 
-/***********************************************/
-/*                 Register File               */
-/***********************************************/
+/*******************************************************************************/
+/*                                  Register File                              */
+/*******************************************************************************/
 
     wire [31:0] rs1_data, rs2_data;         // Data read from rs1, rs2
     wire [31:0] regWrData;                  // Data to be written into register
@@ -69,9 +74,9 @@ module top(
         .data1_out(rs1_data), .data2_out(rs2_data)
     );
     
-/***********************************************/
-/*                      ALU                    */
-/***********************************************/
+/*******************************************************************************/
+/*                                     Alu                                     */
+/*******************************************************************************/
     wire [31:0] Alu_A, Alu_B;               // ALU operand
     wire [31:0] Alu_Out;                    // ALU output
     wire ZERO, SLT, SLTU;                   // Comparison of the two operands
@@ -86,9 +91,9 @@ module top(
         .zero(ZERO), .slt(SLT), .sltu(SLTU)
     );
 
-/***********************************************/
-/*                  Data Memory                */
-/***********************************************/
+/*******************************************************************************/
+/*                               Data Memory Wires                             */
+/*******************************************************************************/
     wire [31:0] memAddr;                    // Memory address to be read from Data Memory
     wire [31:0] memRdData, memWrData;       // memRdData : value read from memAddr
                                             // memWrData : value to be written into Data Memory
@@ -104,9 +109,9 @@ module top(
                         func == `sltu ? SLTU : Alu_Out;
                         
 
-/***********************************************/
-/*                    Next PC                  */
-/***********************************************/
+/*******************************************************************************/
+/*                                PcSrc, PC_IN                                 */
+/*******************************************************************************/
 
     reg branch_check;
     always @(posedge (opcode == `branch))
@@ -129,7 +134,9 @@ module top(
         endcase
     end
 
-    // Output Assignment
+/*******************************************************************************/
+/*                           Output Ports Assignments                          */
+/*******************************************************************************/
     assign IAD = PC;
     assign DAD = memAddr;
     assign MREQ = MemRead || MemWrite;
