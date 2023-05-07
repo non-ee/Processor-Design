@@ -81,7 +81,7 @@ module decoder (
         
         // I-type
         else if (inst[6:0] == `jalr || inst[6:0] == `load)
-            alu_control = 0;
+            alu_control = `ADD;
         else if (inst[6:0] == `I_op) begin
             case (inst[14:12])
                 3'b000 : alu_control = `ADD;                                 // addi
