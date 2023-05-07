@@ -1,0 +1,5 @@
+*.ds
+*.dat
+./hello
+./out
+./top_test.vcd
