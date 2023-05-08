@@ -63,7 +63,7 @@ module decoder (
         input [31:0] inst;
         
         // R-type
-        if (inst[6:0] == 7'b0110011) begin
+        if (inst[6:0] == `R_op) begin
             case ({inst[31:25], inst[14:12]})
                 10'b0000000_000 : alu_control = `ADD;       // ADD
                 10'b0100000_000 : alu_control = `SUB;       // SUB
@@ -81,7 +81,7 @@ module decoder (
         
         // I-type
         else if (inst[6:0] == `jalr || inst[6:0] == `load)
-            alu_control = 0;
+            alu_control = `ADD;
         else if (inst[6:0] == `I_op) begin
             case (inst[14:12])
                 3'b000 : alu_control = `ADD;                                 // addi

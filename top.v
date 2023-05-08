@@ -131,6 +131,7 @@ module top(
             `jal : PC_IN <= PC + Imm;
             `jalr : PC_IN <= rs1_data + Imm;
             `branch : PC_IN <= PC + Imm;
+            default : PC_IN <= 32'hxxxxxxxx;
         endcase
     end
 
