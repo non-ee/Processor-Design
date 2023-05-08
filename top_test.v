@@ -118,7 +118,7 @@ module top_test;
 
    //*** description for wave form ***//
    initial begin
-      // $monitor($stime," PC=%h INST=%h", IAD, IDT); 
+      $monitor($stime," PC=%h INST=%h", IAD, IDT); 
       //ここから2行はIcarus Verilog用(手元で動かすときに使ってください)
       $dumpfile("top_test.vcd");
       $dumpvars(0, u_top_1);
