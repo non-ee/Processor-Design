@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`define IN_TOTAL 10000
+`define IN_TOTAL 100
 `include "top.v"
 
 module top_test;
@@ -118,7 +118,7 @@ module top_test;
 
    //*** description for wave form ***//
    initial begin
-      // $monitor($stime," PC=%h INST=%h", IAD, IDT); 
+      $monitor($stime," PC=%h INST=%h", IAD, IDT); 
       //ここから2行はIcarus Verilog用(手元で動かすときに使ってください)
       $dumpfile("top_test.vcd");
       $dumpvars(0, u_top_1);

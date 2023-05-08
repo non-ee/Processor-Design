@@ -29,10 +29,10 @@ module decoder (
                         opCode == `R_op   ;     // R-type
 
     assign MemRead  =   opCode == `load;        // enable read the memory for load instruction
-    assign MemWrite =   opCode == `store;       // enable write over the memory for store instruction
-                                                        
     
-    assign AluSrc =  opCode == `load || opCode == `store || opCode == `I_op  ;
+    assign MemWrite =   opCode == `store;       // enable write over the memory for store instruction                                                    
+    
+    assign AluSrc  =  opCode == `load || opCode == `store || opCode == `I_op  ;
                                 
     assign AluCtrl = alu_control(inst);
 

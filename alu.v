@@ -11,7 +11,7 @@ module alu (
     assign slt  = Ctrl == `SUB ? ($signed(Out) < 0) : 1'bx ;
     assign sltu = Ctrl == `SUB ? (Out < 0) : 1'bx ;
 
-    assign Out  =  Ctrl == `ADD ? A + B    :
+    assign Out  =   Ctrl == `ADD ? A + B    :
                     Ctrl == `SUB ? A - B    :
                     Ctrl == `AND ? A & B    :
                     Ctrl == `OR  ? A | B    :

@@ -1,5 +1,11 @@
 *.ds
 *.dat
+*.v
+*.vh
+*.vcd
 hello
 out
-top_test.vcd
+import.sh
+hello
+prime_small
+
