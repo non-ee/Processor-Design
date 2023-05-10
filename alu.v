@@ -8,8 +8,8 @@ module alu (
 );
 
     assign zero = Ctrl == `SUB ? (Out == 0) : 1'bx ;
-    assign slt  = Ctrl == `SUB ? ($signed(Out) < 0) : 1'bx ;
-    assign sltu = Ctrl == `SUB ? (Out < 0) : 1'bx ;
+    assign slt  = Ctrl == `SUB ? ($signed(A) < $signed(B)) : 1'bx ;
+    assign sltu = Ctrl == `SUB ? (A < B) : 1'bx ;
 
     assign Out  =   Ctrl == `ADD ? A + B    :
                     Ctrl == `SUB ? A - B    :

@@ -1,11 +1,12 @@
 *.ds
 *.dat
-./*.v
-./*.vh
-./*.vcd
+*.vcd
+*.v
+*.vh
 hello
 out
 import.sh
 hello
 prime_small
-
+c/*
+MiBench/*

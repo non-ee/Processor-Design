@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 `include "macro.vh"
 `include "alu.v"
 `include "decoder.v"
@@ -22,28 +24,35 @@ module top(
                                     // for store inst, as an output to be read by data memory
 );
 
+    wire [31:0] inst  = IDT;
+    wire [7:0] opcode = inst[6:0];
+    wire [2:0] func   = inst[14:12];
+
 /*******************************************************************************/
 /*                                 Program Counter                             */
 /*******************************************************************************/
     parameter PC_ORIGIN = 32'h10000;
     wire PcSrc;
-    reg [31:0] PC_IN, PC;
+    reg [31:0] PC;
+    wire [31:0] PC_IN;
+    wire LOAD_ON;
+    reg LOAD_OFF = 1;
 
     always @(posedge clk or negedge rst) begin
-        if (~rst) PC <= PC_ORIGIN;
-        else PC <= PcSrc ? PC_IN : PC + 4;
+        if (~rst) 
+            PC <= PC_ORIGIN;
+        else if (LOAD_OFF)
+            PC <= PcSrc ? PC_IN : PC + 4;
+    end
+
+    assign LOAD_ON = opcode == `load;
+    always @(negedge clk) begin
+        if (LOAD_ON) LOAD_OFF <= ~LOAD_OFF;
     end
 
 /*******************************************************************************/
 /*                              Instruction Decoder                            */
 /*******************************************************************************/
-    wire [31:0] inst;
-    wire [7:0] opcode;
-    wire [2:0] func;
-    assign inst = IDT; 
-    assign opcode = inst[6:0];
-    assign func = inst[14:12];
-
     wire [4:0] rs1, rs2, rd;
     wire RegWrite, MemRead, MemWrite, AluSrc;
     wire [2:0] AluCtrl;
@@ -62,13 +71,13 @@ module top(
 /*******************************************************************************/
 /*                                  Register File                              */
 /*******************************************************************************/
-
     wire [31:0] rs1_data, rs2_data;         // Data read from rs1, rs2
     wire [31:0] regWrData;                  // Data to be written into register
+    wire wr_n = LOAD_ON ? LOAD_OFF : RegWrite;
 
     rf32x32 u_regfile(
         .clk(~clk), .reset(rst),
-        .wr_n(~RegWrite), 
+        .wr_n(~wr_n), 
         .rd1_addr(rs1), .rd2_addr(rs2), .wr_addr(rd),
         .data_in(regWrData),
         .data1_out(rs1_data), .data2_out(rs2_data)
@@ -101,6 +110,7 @@ module top(
     assign memWrData = rs2_data;
     assign memRdData = DDT;
 
+    
     assign regWrData =  opcode == `load ? memRdData :
                         opcode == `jal || opcode == `jalr ? PC + 4 :
                         opcode == `lui ? Imm :
@@ -113,27 +123,21 @@ module top(
 /*                                PcSrc, PC_IN                                 */
 /*******************************************************************************/
 
-    reg branch_check;
-    always @(posedge (opcode == `branch))
-        branch_check =  func == `beq ? ZERO :
-                        func == `bne ? ~ZERO :
-                        func == `blt ? SLT :
-                        func == `bge ? ~SLT :
-                        func == `bltu ? SLTU :
-                        func == `bgeu ? ~SLTU :
-                        1'bx;
+    wire branch_check;
+    assign branch_check = opcode == `branch ?   func == `beq ? ZERO :
+                                                func == `bne ? ~ZERO :
+                                                func == `blt ? SLT :
+                                                func == `bge ? ~SLT :
+                                                func == `bltu ? SLTU :
+                                                func == `bgeu ? ~SLTU : 1'bx
+                                                : 0;
 
     assign PcSrc =  opcode === 7'bxxxxxxx ? 0 : opcode == `branch ? branch_check :
-                                                opcode == `jal || opcode == `jalr;
+                                                opcode == `jal || opcode == `jalr ;
 
-    always @(posedge PcSrc) begin
-        case (opcode)
-            `jal : PC_IN <= PC + Imm;
-            `jalr : PC_IN <= rs1_data + Imm;
-            `branch : PC_IN <= PC + Imm;
-            default : PC_IN <= 32'hxxxxxxxx;
-        endcase
-    end
+    assign PC_IN =  opcode == `jal ? PC + Imm :
+                    opcode == `jalr ? Alu_Out :
+                    opcode == `branch ? PC + Imm : 32'hxxxxxxxx;
 
 /*******************************************************************************/
 /*                           Output Ports Assignments                          */
@@ -149,5 +153,11 @@ module top(
 
     assign IACK_n = 1;
     assign DDT = memWrData;
+
+
+    wire [31:0] a5 = u_regfile.u_DW_ram_2r_w_s_dff.mem[32*15+31:32*15];
+    wire [31:0] a4 = u_regfile.u_DW_ram_2r_w_s_dff.mem[32*14+31:32*14];
+
+    wire [31:0] ra = u_regfile.u_DW_ram_2r_w_s_dff.mem[32*1+31:32*1];
 
 endmodule
