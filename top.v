@@ -154,10 +154,4 @@ module top(
     assign IACK_n = 1;
     assign DDT = memWrData;
 
-
-    wire [31:0] a5 = u_regfile.u_DW_ram_2r_w_s_dff.mem[32*15+31:32*15];
-    wire [31:0] a4 = u_regfile.u_DW_ram_2r_w_s_dff.mem[32*14+31:32*14];
-
-    wire [31:0] ra = u_regfile.u_DW_ram_2r_w_s_dff.mem[32*1+31:32*1];
-
 endmodule
