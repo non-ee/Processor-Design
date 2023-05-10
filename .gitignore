@@ -1,8 +1,8 @@
 *.ds
 *.dat
-./*.v
-./*.vh
-./*.vcd
+.v
+.vh
+.vcd
 hello
 out
 import.sh
