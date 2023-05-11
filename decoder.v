@@ -32,7 +32,7 @@ module decoder (
     
     assign MemWrite =   opCode == `store;       // enable write over the memory for store instruction                                                    
     
-    assign AluSrc  =  opCode == `load || opCode == `store || opCode == `I_op  ;
+    assign AluSrc  =  opCode == `load || opCode == `store || opCode == `I_op || opCode == `jalr ;
                                 
     assign AluCtrl = alu_control(inst);
 
