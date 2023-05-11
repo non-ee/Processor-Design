@@ -1,7 +1,5 @@
 *.ds
 *.dat
-*.v
-*.vh
 *.vcd
 hello
 out
