@@ -36,18 +36,18 @@ module top(
     reg [31:0] PC;
     wire [31:0] PC_IN;
     wire LOAD_ON;
-    reg LOAD_OFF = 1;
+    reg new_clk = 0;
 
     always @(posedge clk or negedge rst) begin
         if (~rst) 
             PC <= PC_ORIGIN;
-        else if (LOAD_OFF)
+        else if (~new_clk)
             PC <= PcSrc ? PC_IN : PC + 4;
     end
 
     assign LOAD_ON = opcode == `load;
     always @(negedge clk) begin
-        if (LOAD_ON) LOAD_OFF <= ~LOAD_OFF;
+        if (LOAD_ON) new_clk <= ~new_clk;
     end
 
 /*******************************************************************************/
@@ -73,7 +73,7 @@ module top(
 /*******************************************************************************/
     wire [31:0] rs1_data, rs2_data;         // Data read from rs1, rs2
     wire [31:0] regWrData;                  // Data to be written into register
-    wire wr_n = LOAD_ON ? LOAD_OFF : RegWrite;
+    wire wr_n = LOAD_ON ? ~new_clk && RegWrite : RegWrite;
 
     rf32x32 u_regfile(
         .clk(~clk), .reset(rst),
