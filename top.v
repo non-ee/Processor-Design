@@ -3,6 +3,8 @@
 `include "macro.vh"
 `include "alu.v"
 `include "decoder.v"
+`include "next_pc.v"
+`include "rwrite_data.v"
 `include "rf32x32.v"
 
 module top(
@@ -32,7 +34,7 @@ module top(
 /*                                 Program Counter                             */
 /*******************************************************************************/
     parameter PC_ORIGIN = 32'h10000;
-    wire PcSrc;
+    
     reg [31:0] PC;
     wire [31:0] PC_IN;
     wire LOAD_ON;
@@ -42,7 +44,7 @@ module top(
         if (~rst) 
             PC <= PC_ORIGIN;
         else if (~new_clk)
-            PC <= PcSrc ? PC_IN : PC + 4;
+            PC <= PC_IN;
     end
 
     assign LOAD_ON = opcode == `load;
@@ -61,25 +63,24 @@ module top(
     decoder u_decoder(
         .inst(inst),
         .rd(rd), .rs1(rs1), .rs2(rs2),
-        .RegWrite(RegWrite),
+        .Imm(Imm),
+        .AluSrc(AluSrc), .AluCtrl(AluCtrl),
         .MemRead(MemRead), .MemWrite(MemWrite),
-        .AluSrc(AluSrc),
-        .AluCtrl(AluCtrl),
-        .Imm(Imm)
+        .RegWrite(RegWrite)
     );
 
 /*******************************************************************************/
 /*                                  Register File                              */
 /*******************************************************************************/
     wire [31:0] rs1_data, rs2_data;         // Data read from rs1, rs2
-    wire [31:0] regWrData;                  // Data to be written into register
+    wire [31:0] data_in;                  // Data to be written into register
     wire wr_n = LOAD_ON ? ~new_clk && RegWrite : RegWrite;
 
     rf32x32 u_regfile(
         .clk(~clk), .reset(rst),
         .wr_n(~wr_n), 
         .rd1_addr(rs1), .rd2_addr(rs2), .wr_addr(rd),
-        .data_in(regWrData),
+        .data_in(data_in),
         .data1_out(rs1_data), .data2_out(rs2_data)
     );
     
@@ -101,49 +102,30 @@ module top(
     );
 
 /*******************************************************************************/
-/*                               Data Memory Wires                             */
+/*                            Write Back to Register                           */
 /*******************************************************************************/
-    wire [31:0] memAddr;                    // Memory address to be read from Data Memory
-    wire [31:0] memRdData, memWrData;       // memRdData : value read from memAddr
-                                            // memWrData : value to be written into Data Memory
-    assign memAddr = Alu_Out;
-    assign memWrData = rs2_data;
-    assign memRdData = DDT;
-
-    
-    assign regWrData =  opcode == `load ? memRdData :
-                        opcode == `jal || opcode == `jalr ? PC + 4 :
-                        opcode == `lui ? Imm :
-                        opcode == `auipc ? PC + Imm :
-                        func == `slt ? SLT :
-                        func == `sltu ? SLTU : Alu_Out;
-                        
+    rwrite_data u_rwrite_data(
+        .inst(inst),
+        .PC(PC), .DDT(DDT), .Imm(Imm), .Alu_Out(Alu_Out),
+        .SLT(SLT), .SLTU(SLTU),
+        .data_in(data_in)
+    );
 
 /*******************************************************************************/
-/*                                PcSrc, PC_IN                                 */
+/*                                   Next PC                                   */
 /*******************************************************************************/
-
-    wire branch_check;
-    assign branch_check = opcode == `branch ?   func == `beq ? ZERO :
-                                                func == `bne ? ~ZERO :
-                                                func == `blt ? SLT :
-                                                func == `bge ? ~SLT :
-                                                func == `bltu ? SLTU :
-                                                func == `bgeu ? ~SLTU : 1'bx
-                                                : 0;
-
-    assign PcSrc =  opcode === 7'bxxxxxxx ? 0 : opcode == `branch ? branch_check :
-                                                opcode == `jal || opcode == `jalr ;
-
-    assign PC_IN =  opcode == `jal ? PC + Imm :
-                    opcode == `jalr ? Alu_Out :
-                    opcode == `branch ? PC + Imm : 32'hxxxxxxxx;
+    next_pc u_next_pc(
+        .inst(inst),
+        .Imm(Imm), .Alu_Out(Alu_Out),
+        .zero(ZERO), .slt(SLT), .sltu(SLTU),
+        .PC(PC), .PC_IN(PC_IN)
+    );
 
 /*******************************************************************************/
 /*                           Output Ports Assignments                          */
 /*******************************************************************************/
     assign IAD = PC;
-    assign DAD = memAddr;
+    assign DAD = Alu_Out;
     assign MREQ = MemRead || MemWrite;
     assign WRITE = MemWrite;
     assign SIZE =   func[1:0] == 2'b10 ? 2'b00 :     // word
@@ -152,6 +134,6 @@ module top(
                                         2'bxx;
 
     assign IACK_n = 1;
-    assign DDT = memWrData;
+    assign DDT = rs2_data;
 
 endmodule

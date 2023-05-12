@@ -22,6 +22,6 @@ module next_pc(inst, Imm, Alu_Out, zero, slt, sltu, PC, PC_IN);
 
     assign PC_IN =  branch_check ? PC + Imm :
                     opcode == `jal ? PC + Imm :
-                    opcode == `jalr ? Alu_Out : 32'hxxxxxxxx;
+                    opcode == `jalr ? Alu_Out : PC + 4;
 
 endmodule
