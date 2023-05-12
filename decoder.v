@@ -39,18 +39,12 @@ module decoder (
     assign Imm = Immediate(inst);
 
     // (instruction) --> 32bits Immediate 
+    // (instruction) --> 32bits Immediate 
     function [31:0] Immediate;
         input [31:0] inst;
         case (inst[6:0])        
-            `jalr, `load : Immediate = $signed({inst[31:20]});                                          /* I-type format */
-            `I_op : begin
-                        case ({inst[14:12]})
-                            3'b001,
-                            3'b101  : Immediate = inst[24:20];
-                            default : Immediate = $signed({inst[31:20]});  
-                        endcase
-                    end
-            
+            `jalr, `load : Immediate = $signed({inst[31:20]});           /* I-type format */
+            `I_op       : Immediate = inst[14:12] == 3'b001 || inst[14:12] == 3'b101 ? inst[24:20] : $signed(inst[31:20]);
             `store      : Immediate = $signed({inst[31:25], inst[11:7]});                               /* S-type format */
             `branch     : Immediate = $signed({inst[31], inst[7], inst[30:25], inst[11:8], 1'b0});      /* B-type format */
             `lui,`auipc : Immediate = {inst[31:12], 12'b0};                                             /* B-type format */
