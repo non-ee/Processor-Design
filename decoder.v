@@ -1,4 +1,5 @@
 `include "macro.vh"
+`include "imm_decoder.v"
 
 module decoder (
     input [31:0] inst,          // Instruction
@@ -37,28 +38,36 @@ module decoder (
     assign AluCtrl = alu_control(inst);
 
     assign Imm = Immediate(inst);
+    // imm_decoder decoder_imm_decoder(.inst(inst), .Imm(Imm));
 
     // (instruction) --> 32bits Immediate 
-    // (instruction) --> 32bits Immediate 
     function [31:0] Immediate;
-        input [31:0] inst;
-        case (inst[6:0])        
-            `jalr, `load : Immediate = $signed({inst[31:20]});           /* I-type format */
-            `I_op       : Immediate = inst[14:12] == 3'b001 || inst[14:12] == 3'b101 ? inst[24:20] : $signed(inst[31:20]);
-            `store      : Immediate = $signed({inst[31:25], inst[11:7]});                               /* S-type format */
-            `branch     : Immediate = $signed({inst[31], inst[7], inst[30:25], inst[11:8], 1'b0});      /* B-type format */
-            `lui,`auipc : Immediate = {inst[31:12], 12'b0};                                             /* B-type format */
-            `jal        : Immediate = $signed({inst[31], inst[19:12], inst[20], inst[30:21], 1'b0});    /* J-type format */
+        input [31:0] INST;
+        case (INST[6:0])        
+            `jalr, `load : Immediate = $signed({INST[31:20]});                                          /* I-type format */
+            `I_op : 
+            begin
+                        case (INST[14:12])
+                            3'b001,
+                            3'b101  : Immediate = INST[24:20];
+                            default : Immediate = $signed(INST[31:20]);  
+                        endcase
+                    end
+            
+            `store      : Immediate = $signed({INST[31:25], INST[11:7]});                               /* S-type format */
+            `branch     : Immediate = $signed({INST[31], INST[7], INST[30:25], INST[11:8], 1'b0});      /* B-type format */
+            `lui,`auipc : Immediate = {INST[31:12], 12'b0};                                             /* B-type format */
+            `jal        : Immediate = $signed({INST[31], INST[19:12], INST[20], INST[30:21], 1'b0});    /* J-type format */
         endcase
     endfunction
 
     // (instruction) --> 3bits Alu control code
     function [2:0] alu_control;
-        input [31:0] inst;
+        input [31:0] INST;
         
         // R-type
-        if (inst[6:0] == `R_op) begin
-            case ({inst[31:25], inst[14:12]})
+        if (INST[6:0] == `R_op) begin
+            case ({INST[31:25], INST[14:12]})
                 10'b0000000_000 : alu_control = `ADD;       // ADD
                 10'b0100000_000 : alu_control = `SUB;       // SUB
                 10'b0000000_001 : alu_control = `SLL;       // Shift Left Logic
@@ -74,10 +83,10 @@ module decoder (
         end
         
         // I-type
-        else if (inst[6:0] == `jalr || inst[6:0] == `load)
+        else if (INST[6:0] == `jalr || INST[6:0] == `load)
             alu_control = `ADD;
-        else if (inst[6:0] == `I_op) begin
-            case (inst[14:12])
+        else if (INST[6:0] == `I_op) begin
+            case (INST[14:12])
                 3'b000 : alu_control = `ADD;                                 // addi
                 3'b010,                                  
                 3'b011 : alu_control = `SUB;                                 // slti, sltiu;
@@ -86,17 +95,17 @@ module decoder (
                 3'b111 : alu_control = `AND;                                 // andi
 
                 3'b001 : alu_control = `SLL;                                 // slli
-                3'b101 : alu_control =  (inst[31:25] == 0 )    ? `SRL :      // srli      
-                                        (inst[31:25] == 7'h20) ? `SRA :      // srai
+                3'b101 : alu_control =  (INST[31:25] == 0 )    ? `SRL :      // srli      
+                                        (INST[31:25] == 7'h20) ? `SRA :      // srai
                                                                 3'bxxx;    
                 default: alu_control = 3'bxxx;
             endcase
         end
 
         // S-type, U-type
-        else if (inst[6:0] == `store || inst[6:0] == `auipc)
+        else if (INST[6:0] == `store || INST[6:0] == `auipc)
             alu_control = `ADD;
-        else if (inst[6:0] == `branch)
+        else if (INST[6:0] == `branch)
             alu_control = `SUB;
 
     endfunction
