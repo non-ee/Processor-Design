@@ -1,5 +1,4 @@
 `include "macro.vh"
-`include "imm_decoder.v"
 
 module decoder (
     input [31:0] inst,          // Instruction
@@ -38,15 +37,13 @@ module decoder (
     assign AluCtrl = alu_control(inst);
 
     assign Imm = Immediate(inst);
-    // imm_decoder decoder_imm_decoder(.inst(inst), .Imm(Imm));
 
     // (instruction) --> 32bits Immediate 
     function [31:0] Immediate;
         input [31:0] INST;
         case (INST[6:0])        
             `jalr, `load : Immediate = $signed({INST[31:20]});                                          /* I-type format */
-            `I_op : 
-            begin
+            `I_op : begin
                         case (INST[14:12])
                             3'b001,
                             3'b101  : Immediate = INST[24:20];
