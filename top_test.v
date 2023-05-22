@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`define IN_TOTAL 100000
+`define IN_TOTAL 1000000
 `include "top.v"
 
 module top_test;
@@ -170,6 +170,8 @@ module top_test;
                         end
                      else
                      begin
+                        // $display("%h , %h", {Daddr[BIT_WIDTH-1:2],2'b11} - Daddr[1:0],
+                        // DATA_Dmem[{Daddr[BIT_WIDTH-1:2],2'b11} - Daddr[1:0]]);
                         force DDT[BIT_WIDTH-1:0] = {{24{1'b0}}, DATA_Dmem[{Daddr[BIT_WIDTH-1:2],2'b11} - Daddr[1:0]]};
                      end // else: !if(SIZE == 2'b01)
 
@@ -229,6 +231,7 @@ module top_test;
                               $write("%c", DDT[BIT_WIDTH-25:BIT_WIDTH-32]);
                            end
                            else begin
+
                               DATA_Dmem[{Daddr[BIT_WIDTH-1:2],2'b11} - Daddr[1:0]] = DDT[BIT_WIDTH-25:BIT_WIDTH-32];
                            end
                      end // else: !if(SIZE == 2'b01)
