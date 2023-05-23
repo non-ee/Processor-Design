@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`define IN_TOTAL 1000000
+`define IN_TOTAL 500000
 `include "top.v"
 
 module top_test;
@@ -197,7 +197,7 @@ module top_test;
                      $display("\nExited by program.");
                      $display("TOTAL: %d [ns]", i);
                      // $display("M[STDOUT_ADDR]=%h",DATA_Dmem[STDOUT_ADDR]);
-                     // dump_task1;
+                     dump_task1;
                      $finish;
                   end
                else if (Daddr != STDOUT_ADDR)
