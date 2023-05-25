@@ -148,12 +148,10 @@ module top_test;
       begin
          if(u_top_1.MREQ && !u_top_1.WRITE)
             begin
-
                if (Max_Daddr < Daddr)
                   begin
                      Max_Daddr = Daddr;
                   end
-
                CDLL = CDLL + 1;
                CDSL = 0;
                if(CDLL == DMEM_LATENCY)
