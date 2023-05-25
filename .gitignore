@@ -1,10 +1,6 @@
 *.ds
 *.dat
 *.vcd
-*.v
-*.vh
 hello
 out
 import.sh
-c/*
-MiBench/*
