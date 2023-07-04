@@ -33,4 +33,9 @@
 `define slt     3'b010
 `define sltu    3'b011
 
+// LOAD SIZE
+`define BYTE    2'b10
+`define HALF    2'b01
+`define WORD    2'b00
+
 `endif

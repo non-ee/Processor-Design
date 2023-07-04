@@ -74,10 +74,6 @@ module DW_ram_2r_w_s_dff (clk, rst_n, cs_n, wr_n, rd1_addr, rd2_addr,
    
    wire 		   a_rst_n;
    
-   wire [31:0] ra, sp;
-   assign {sp, ra} = mem[95:32];
-
-   
    initial begin : parameter_check
       integer param_err_flg;
 
