@@ -1,6 +1,7 @@
 `timescale 1ns/1ps
 `define IN_TOTAL 1000000000
 `include "top/top.v"
+`include "top/top2.v"
 //`define DEBUG
 
 
