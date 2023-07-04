@@ -1,6 +1,8 @@
 `timescale 1ns/1ps
-`define IN_TOTAL 100
-`include "top.v"
+`define IN_TOTAL 1000000000
+`include "top/top.v"
+//`define DEBUG
+
 
 module top_test;
    
@@ -88,23 +90,34 @@ module top_test;
          #1 rst = 1'b0;
          #CYCLE rst = 1'b1;
       end
-
+      integer j;
+      // int flg=0;
       initial begin
          #HALF_CYCLE;
+         //$display("PC=%h, INST=%h", IAD, IDT);
          //*** data input loop ***//
-         for (i = 0; i < `IN_TOTAL; i =i +1)
+         for (i = 0;i < `IN_TOTAL; i =i +1)
             begin
                Iaddr = u_top_1.IAD;            
                fetch_task1;
                
-               #(HALF_CYCLE);
                Daddr = u_top_1.DAD;
                load_task1;
                store_task1;
-               
+
+`ifdef DEBUG
+             $display($stime," PC=%h INST=%h stall=%b comp=%b pcsrc=%b PC_IN=%h rs1=%2d rs2=%2d rd=%2d data_in=%h", IAD, IDT,
+           u_top_1.stall,u_top_1.comp,u_top_1.pcsrc, u_top_1.PC_IN,u_top_1.rs1,u_top_1.rs2, u_top_1.rd,u_top_1.data_in);
+         //       for (j =0; j < 32; j = j+1)  // output register to Reg_data (Reg_out.dat)
+         //       begin
+         //          Reg_temp = u_top_1.u_regfile.u_DW_ram_2r_w_s_dff.mem >> (BIT_WIDTH * j);
+         //          $write("x[%2d]:%h ", j, Reg_temp);
+         //          if ((j+1)%8==0) $write("\n"); 
+         //       end
+`endif
+
                // #(STB);
-               #(HALF_CYCLE);
-               // #CYCLE;
+               #CYCLE;
                release DDT;
           end // for (i = 0; i < `IN_TOTAL; i =i +1)
 
@@ -116,18 +129,10 @@ module top_test;
 
      end // initial begin
 
-   //*** description for wave form ***//
-   initial begin
-      $monitor($stime," PC=%h INST=%h", IAD, IDT); 
-      //ここから2行はIcarus Verilog用(手元で動かすときに使ってください)
-      $dumpfile("top_test.vcd");
-      $dumpvars(0, u_top_1);
-	  //ここから2行はNC-Verilog用(woodblockで動かすときに使ってください)
-      //$shm_open("waves.shm");
-      //$shm_probe("AS");
-   end
-
-   //*** tasks ***//
+      initial begin
+         // $monitor($stime," PC=%h INST=%h stall=%b comp=%b pcsrc=%b PC_IN=%h rs1=%2d rs2=%2d rd=%2d", IAD, IDT,
+         //  u_top_1.stall,u_top_1.comp,u_top_1.pcsrc, u_top_1.PC_IN,u_top_1.rs1,u_top_1.rs2, u_top_1.rd);
+      end
 
    task fetch_task1;
       begin
@@ -138,7 +143,7 @@ module top_test;
                ACKI_n = 1'b0;
                CIL = 0;
             end
-            else
+         else
             begin
                IDT = 32'hxxxxxxxx;
                ACKI_n = 1'b1;
@@ -150,12 +155,10 @@ module top_test;
       begin
          if(u_top_1.MREQ && !u_top_1.WRITE)
             begin
-
                if (Max_Daddr < Daddr)
                   begin
                      Max_Daddr = Daddr;
                   end
-
                CDLL = CDLL + 1;
                CDSL = 0;
                if(CDLL == DMEM_LATENCY)
@@ -195,8 +198,9 @@ module top_test;
                if (Daddr == EXIT_ADDR)
                   begin
                      $display("\nExited by program.");
+                     $display("TOTAL: %d [ns]", i);
                      // $display("M[STDOUT_ADDR]=%h",DATA_Dmem[STDOUT_ADDR]);
-                     // dump_task1;
+                     dump_task1;
                      $finish;
                   end
                else if (Daddr != STDOUT_ADDR)
@@ -230,6 +234,7 @@ module top_test;
                               $write("%c", DDT[BIT_WIDTH-25:BIT_WIDTH-32]);
                            end
                            else begin
+
                               DATA_Dmem[{Daddr[BIT_WIDTH-1:2],2'b11} - Daddr[1:0]] = DDT[BIT_WIDTH-25:BIT_WIDTH-32];
                            end
                      end // else: !if(SIZE == 2'b01)
@@ -247,7 +252,7 @@ module top_test;
 
    task dump_task1;
       begin
-        Imem_data = $fopen("./Imem_out.dat");
+        Imem_data = $fopen("./zImem_out.dat");
         for (i = IMEM_START; i <= IMEM_START + IMEM_SIZE; i = i+4)  // output data memory to Dmem_data (Dmem_out.dat)
           begin
              $fwrite(Imem_data, "%h :%h %h %h %h\n", i, DATA_Imem[i], DATA_Imem[i+1], DATA_Imem[i+2], DATA_Imem[i+3]);

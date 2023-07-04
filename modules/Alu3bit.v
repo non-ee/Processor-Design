@@ -1,15 +1,10 @@
-`include "macro.vh"
+`include "header/macro.vh"
 
-module alu (
+module Alu3bit (
     input [2:0] Ctrl,           // Signal to control ALU operation
     input [31:0] A, B,          // Operands : A, B
-    output [31:0] Out,      // Output of the operation
-    output zero, slt, sltu      // Comparison between A and B
+    output [31:0] Out      // Output of the operation
 );
-
-    assign zero = Ctrl == `SUB ? (Out == 0) : 1'bx ;
-    assign slt  = Ctrl == `SUB ? ($signed(Out) < 0) : 1'bx ;
-    assign sltu = Ctrl == `SUB ? (Out < 0) : 1'bx ;
 
     assign Out  =   Ctrl == `ADD ? A + B    :
                     Ctrl == `SUB ? A - B    :
