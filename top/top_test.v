@@ -133,8 +133,6 @@ module top_test;
       // $monitor($stime, " PC=%h INST=%h opcode=%b ialusrc=%b alusrc=%b", IAD, IDT, 
       // u_top_1.u_id.id_decoder.decoder_alu_decoder.opcode,
       // u_top_1.id_alusrc, u_top_1.ex_alusrc);
-      $shm_open("waves.shm");
-      $shm_probe("AS");
    end
 
    //*** tasks ***//

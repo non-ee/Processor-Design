@@ -1,7 +1,7 @@
 FILE="$HOME/riscv-ex/"
 
-[ "$1" = "bitcnts" -o "$1" = "dijkstra" -o "$1" = "stringsearch" ] && { FILE+="MiBench/"; } || { FILE+="c/"; } 
-[ "$2" = "x" ] && { FILE+="$1"; } || { FILE+="$1/$2"; }
+[ "$1" = "bitcnts" -o "$1" = "dijkstra" -o "$1" = "stringsearch" ] && { FILE="${FILE}MiBench/"; } || { FILE="${FILE}c/"; } 
+[ "$2" = "x" ] && { FILE="${FILE}$1"; } || { FILE="${FILE}$1/$2"; }
 
 make -C $FILE clean
 make -C $FILE OPTIMIZE=$3

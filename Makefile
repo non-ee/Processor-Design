@@ -5,7 +5,8 @@ endif
 
 run :
 	@./c.sh $(RUN_ARGS)
-	@ncverilog top/top_test.v
+	@iverilog -o out top/top_test.v
+	@vvp out
 
 dc :
 	dc_shell-t -f runscript.tcl | tee log
