@@ -1,4 +1,4 @@
 # Processor Design
 ---
 
-Implement RISCV 32bits Architure based Processor. 
+Implement RISCV 32bits Architecture based Processor. 
