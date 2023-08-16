@@ -1,7 +1,6 @@
 `timescale 1ns/1ps
 `define IN_TOTAL 1000000000
 `include "top/top.v"
-`include "top/top2.v"
 //`define DEBUG
 
 
@@ -95,7 +94,6 @@ module top_test;
       // int flg=0;
       initial begin
          #HALF_CYCLE;
-         //$display("PC=%h, INST=%h", IAD, IDT);
          //*** data input loop ***//
          for (i = 0;i < `IN_TOTAL; i =i +1)
             begin
@@ -200,8 +198,6 @@ module top_test;
                   begin
                      $display("\nExited by program.");
                      $display("TOTAL: %d [ns]", i);
-                     // $display("M[STDOUT_ADDR]=%h",DATA_Dmem[STDOUT_ADDR]);
-                     dump_task1;
                      $finish;
                   end
                else if (Daddr != STDOUT_ADDR)
