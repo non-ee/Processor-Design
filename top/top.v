@@ -28,8 +28,7 @@ module top(
                                     // for store inst, as an output to be read by data memory
 );
 
-    wire [31:0] inst = IDT;
-    wire [31:0] init_INST = 32'h08030137;
+    wire [31:0] inst; 
     wire [7:0] opcode = inst[6:0];
     wire [2:0] func   = inst[14:12];
 
@@ -37,16 +36,16 @@ module top(
 /*                                 Program Counter                             */
 /*******************************************************************************/
     parameter PC_ORIGIN = 32'h10000;
-    
-    wire [31:0] PC, PC_w;
+    parameter INST_ORIGIN = 32'h08050137;    
+
+    wire [31:0] PC, PC_w, PC_o, PC_4_o;
     wire pcsrc;
     wire [31:0] PC_IN, PC_4;
     wire LOAD  = opcode == `load;
-    wire load_ff;
-    wire stall = LOAD && load_ff == 1'b0;
 
-    rst_default_Reg #(32) PC_Register(.clk(clk), .rst(rst), .en(~stall), .DEFAULT(PC_ORIGIN), .IN(PC_w), .OUT(PC));
-    rst_en_Reg #(1) stall_ff(.clk(clk), .rst(rst), .en(LOAD), .IN(~load_ff), .OUT(load_ff));
+    rst_default_Reg #(32) PC_Register(.clk(clk), .rst(rst), .en(1'b1), .DEFAULT(PC_ORIGIN), .IN(PC_w), .OUT(PC));
+    rst_default_Reg #(96) Stage_Pass(.clk(clk), .rst(rst), .en(1'b1), .DEFAULT({64'b0, INST_ORIGIN}),
+			 	     .IN({PC, PC_4, IDT}), .OUT({PC_o, PC_4_o, inst})); 
 
     assign PC_4 = PC + 32'h04;
     assign PC_w = pcsrc ? PC_IN : PC_4;
@@ -70,8 +69,8 @@ module top(
         .MREQ(MREQ), .WRITE(WRITE), .SIZE(SIZE),
         .RegWrite(RegWrite)
     );
-
-   assign flush = stall; 
+    
+    rst_en_Reg #(1) flush_pass(.clk(clk), .rst(rst), .en(1'b1), .IN(pcsrc), .OUT(flush));
 
 /*******************************************************************************/
 /*                                  Register File                              */
@@ -96,7 +95,7 @@ module top(
     wire [31:0] Alu_Out;                     // ALU output
     wire comp;                               // Comparison of the two operands
 
-    assign A = AluSrc[0] ? PC  : data1_out;                
+    assign A = AluSrc[0] ? PC_o  : data1_out;                
     assign B = AluSrc[1] ? Imm : data2_out;
 
     Alu3bit u_alu(.Ctrl(AluCtrl), .A(A), .B(B), .Out(Out));
@@ -127,7 +126,7 @@ module top(
 
     assign data_in =    LOAD ? DDT :
                         LUI  ? Imm :
-                        JAL | JALR ? PC_4 : Alu_Out;
+                        JAL | JALR ? PC_4_o : Alu_Out;
 
 /*******************************************************************************/
 /*                           Output Ports Assignments                          */
