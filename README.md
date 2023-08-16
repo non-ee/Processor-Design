@@ -5,7 +5,7 @@ Design RISCV 32bits Architecture based Processor by Verilog HDL.
 
 <br>
 
-Implementation Method:
+Processing Method:
 - Single Cycle Processing 
 - 2 Cycles Processing
 - Pipeline Processing
