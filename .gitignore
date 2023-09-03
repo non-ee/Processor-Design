@@ -1,6 +1,4 @@
 *.ds
 *.dat
 *.vcd
-hello
 out
-import.sh
