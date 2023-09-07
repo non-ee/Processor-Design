@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 `define IN_TOTAL 1000000000
-`include "top.v"
+`include "top/top.v"
 
 module top_test;
    
@@ -109,7 +109,7 @@ module top_test;
 
         $display("\nReach IN_TOTAL.");
 
-        dump_task1;
+        // dump_task1;
 
         $finish;
 
@@ -195,7 +195,8 @@ module top_test;
               if (Daddr == EXIT_ADDR)
                 begin
                    $display("\nExited by program.");
-                   dump_task1;
+                   $display("TOTAL: %d [ns]", i);
+                   // dump_task1;
                    $finish;
                 end
               else if (Daddr != STDOUT_ADDR)
@@ -261,14 +262,14 @@ module top_test;
              $fwrite(Dmem_data, "%h :%h %h %h %h\n", i, DATA_Dmem[i], DATA_Dmem[i+1], DATA_Dmem[i+2], DATA_Dmem[i+3]);
           end
         $fclose(Dmem_data);
-
-        Reg_data = $fopen("./Reg_out.dat");
-        for (i =0; i < 32; i = i+1)  // output register to Reg_data (Reg_out.dat)
-          begin
-             Reg_temp = u_top_1.id_stage.regfile.u_DW_ram_2r_w_s_dff.mem >> (BIT_WIDTH * i);
-             $fwrite(Reg_data, "%d:%h\n", i, Reg_temp);
-          end
-        $fclose(Reg_data);
+        //
+        // Reg_data = $fopen("./Reg_out.dat");
+        // for (i =0; i < 32; i = i+1)  // output register to Reg_data (Reg_out.dat)
+        //   begin
+        //      Reg_temp = u_top_1.id_stage.regfile.u_DW_ram_2r_w_s_dff.mem >> (BIT_WIDTH * i);
+        //      $fwrite(Reg_data, "%d:%h\n", i, Reg_temp);
+        //   end
+        // $fclose(Reg_data);
       end
 
    endtask // dump_task1
