@@ -5,7 +5,7 @@ endif
 
 run :
 	@./c.sh $(RUN_ARGS)
-	@iverilog -o out top/top_test.v
+	@iverilog -o out test/top_test.v
 	@vvp out
 
 dc :
